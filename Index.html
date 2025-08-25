@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>图片搜索展示</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    input {
+      padding: 8px;
+      width: 300px;
+      font-size: 16px;
+    }
+    button {
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    img {
+      max-width: 500px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>图片搜索</h1>
+  <input type="text" id="searchBox" placeholder="输入关键字">
+  <button onclick="searchImage()">搜索</button>
+  <div id="result"></div>
+
+  <script>
+    let imageList = [];
+    async function fetchImageList() {
+      const apiUrl = "https://api.github.com/repos/hotpad100c/Qoute/contents/";
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      imageList = data
+        .filter(item => item.type === "file" && /\.(png|jpg|jpeg|gif)$/i.test(item.name))
+        .map(item => ({
+          name: item.name,
+          url: item.download_url
+        }));
+    }
+
+    function similarity(a, b) {
+      a = a.toLowerCase();
+      b = b.toLowerCase();
+      if (a === b) return 1;
+      let longer = a.length > b.length ? a : b;
+      let shorter = a.length > b.length ? b : a;
+      let longerLength = longer.length;
+      let same = 0;
+      for (let i = 0; i < shorter.length; i++) {
+        if (longer.includes(shorter[i])) same++;
+      }
+      return same / longerLength;
+    }
+
+    function searchImage() {
+      const keyword = document.getElementById("searchBox").value.trim();
+      if (!keyword) return;
+      let bestMatch = null;
+      let bestScore = -1;
+
+      imageList.forEach(img => {
+        const score = similarity(keyword, img.name);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = img;
+        }
+      });
+
+      const resultDiv = document.getElementById("result");
+      if (bestMatch) {
+        resultDiv.innerHTML = `
+          <p>匹配结果：${bestMatch.name}</p>
+          <img src="${bestMatch.url}" alt="${bestMatch.name}">
+        `;
+      } else {
+        resultDiv.innerHTML = "<p>未找到匹配的图片</p>";
+      }
+    }
+
+    fetchImageList();
+  </script>
+</body>
+</html>
