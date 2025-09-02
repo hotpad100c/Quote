@@ -137,7 +137,13 @@ app.get('/api/search', (req, res) => {
   results.sort((a, b) => b.score - a.score);
   res.json(results.slice(0, 3));
 });
-
+// API:total count
+app.get('/api/count', (req, res) => {
+  if (imageCache.length === 0) {
+    return res.status(503).json({ error: 'Cache not ready' });
+  }
+  res.json({ total: imageCache.length });
+});
 // API: random image
 app.get('/api/random', (req, res) => {
   if (imageCache.length === 0) return res.status(503).json({ error: 'Cache not ready' });
