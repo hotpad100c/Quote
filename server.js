@@ -65,9 +65,7 @@ async function fetchAllImages() {
       return files;
     }  catch (err) {
       console.error("Error fetching from GitHub API:", err.response?.status, err.response?.data);
-      break;
     }
-  
 
   console.log(`Fetched ${allImages.length} images.`);
   return allImages;
