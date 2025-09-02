@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -9,10 +10,11 @@ app.use(express.static('.'));
 // GitHub Repo API
 const repoApi = "https://api.github.com/repos/hotpad100c/Qoute/contents/";
 let imageCache = [];
-const cacheDuration = 5 * 60 * 1000; //refresh every 10 minutes
+const cacheDuration = 5 * 60 * 1000; // refresh every 5 minutes
 const githubToken = process.env.GITHUB_TOKEN;
+const cacheFile = './cache.json';
 
-// Levenshtein idk chatgpt write this 
+// Levenshtein
 function levenshtein(a, b) {
   const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
   for (let i = 0; i <= a.length; i++) dp[i][0] = i;
@@ -32,10 +34,10 @@ function similarity(a, b) {
   return 1 - dist / Math.max(a.length, b.length);
 }
 
-// fetch images
+// Fetch GitHub images
 async function fetchAllImages() {
   console.log("Fetching images from GitHub API...");
-  console.log("GitHub Token prefix:", process.env.GITHUB_TOKEN?.slice(0,5));
+  console.log("GitHub Token prefix:", githubToken?.slice(0, 5));
   let page = 1;
   let allImages = [];
   const headers = githubToken ? { Authorization: `Bearer ${githubToken}` } : {};
@@ -61,10 +63,42 @@ async function fetchAllImages() {
   return allImages;
 }
 
-// chache
-async function refreshCache() {
-  imageCache = await fetchAllImages();
+// Refresh cache with retry + persistence
+async function refreshCache(retries = 3) {
+  let images = [];
+  for (let i = 0; i < retries; i++) {
+    images = await fetchAllImages();
+    if (images.length > 0) break;
+    console.log(`Retrying fetch... (${i + 1}/${retries})`);
+    await new Promise(r => setTimeout(r, 5000)); // wait 5s before retry
+  }
+
+  if (images.length > 0) {
+    imageCache = images;
+    fs.writeFileSync(cacheFile, JSON.stringify(images, null, 2));
+    console.log(`Cache refreshed: ${images.length} images.`);
+  } else {
+    console.log("⚠️ Fetch failed, keeping old cache.");
+  }
 }
+
+// Load cache from file if exists 
+function loadCacheFromFile() {
+  if (fs.existsSync(cacheFile)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+      if (Array.isArray(data) && data.length > 0) {
+        imageCache = data;
+        console.log(`Loaded ${data.length} images from cache.json`);
+      }
+    } catch (err) {
+      console.error("Error reading cache file:", err.message);
+    }
+  }
+}
+
+// Init cache
+loadCacheFromFile();
 refreshCache();
 setInterval(refreshCache, cacheDuration);
 
