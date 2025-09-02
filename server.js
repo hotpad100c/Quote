@@ -60,7 +60,7 @@ async function fetchAllImages() {
       allImages = allImages.concat(files);
       page++;
     } catch (err) {
-      console.error("Error fetching from GitHub API:", err.message);
+      console.error("Error fetching from GitHub API:", err.response?.status, err.response?.data);
       break;
     }
   }
