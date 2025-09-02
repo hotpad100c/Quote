@@ -153,8 +153,9 @@
       const makeLoop = imgs => imgs.map(img => `<img src="${img.url}" alt="${img.name}">`).join("") + imgs.map(img => `<img src="${img.url}" alt="${img.name}">`).join("");
       document.getElementById("stripImagesTop").innerHTML = makeLoop(images);
       document.getElementById("stripImagesBottom").innerHTML = makeLoop(images);
-      document.getElementById("imageCountTop").textContent = ` ${images.length}条奇
-      言已被收录`;
+      const countRes = await fetch('/api/count');
+       const { total } = await countRes.json()
+      document.getElementById("imageCountTop").textContent = ` ${total}条言已被收录`;
     }
 
     loadStrips();
