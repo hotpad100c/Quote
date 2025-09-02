@@ -20,7 +20,12 @@ async function fetchAllImages() {
             // We can't fetch the subdirectory directly, so we need to fetch the root and then filter.
             // The API does not support recursive fetching for contents.
             // A better approach for larger repos would be to use the Git Trees API with recursive=1
-            const response = await axios.get(`${repoApi}?page=${page}&per_page=100`);
+            const headers = {};
+            if (process.env.GITHUB_TOKEN) {    
+              headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+            }
+
+            const response = await axios.get(`${repoApi}?page=${page}&per_page=100`, { headers });
             if (response.data.length === 0) {
                 break;
             }
@@ -46,7 +51,7 @@ async function fetchAllImages() {
     }
 
     // The above loop only gets the root directory. Let's also get the subdirectory.
-    try {
+   /* try {
         const response = await axios.get(`${repoApi}/Some interesting quotes`);
         if (response.data) {
             const subdir_images = response.data
@@ -59,7 +64,7 @@ async function fetchAllImages() {
         }
     } catch (error) {
         console.error("Error fetching subdirectory from GitHub API:", error.message);
-    }
+    }*/
 
 
     return allImages;
