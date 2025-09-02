@@ -62,28 +62,26 @@
       text-align: center;
       margin-top: 10px;
     }
-
-    /* ===== 带子效果 ===== */
     .scroll-strip {
       position: relative;
       overflow: hidden;
-      background: linear-gradient(90deg, #4cafef, #2196f3);
-      color: white;
+      background: #f4f6f8;
       padding: 8px 0;
-      margin: 20px 0 5px 0;
+      margin: 20px 0;
       border-radius: 8px;
     }
-    .scroll-strip span {
-      display: inline-block;
-      white-space: nowrap;
-      padding-left: 100%;
+    .scroll-images {
+      display: flex;
+      gap: 10px;
       animation: scroll-left 15s linear infinite;
-      font-weight: bold;
-      font-size: 18px;
+    }
+    .scroll-images img {
+      height: 50px;
+      border-radius: 6px;
     }
     @keyframes scroll-left {
-      from { transform: translateX(0%); }
-      to   { transform: translateX(-100%); }
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
     .image-count {
       text-align: center;
@@ -102,18 +100,16 @@
   <div id="searchResult" class="grid"></div>
 
   <div id="randomSection">
-    <h2 style="text-align:center;">随便看看？</h2>
-
+    <h2 style="text-align:center;">随便来点</h2>
     <div class="scroll-strip">
-      <span id="stripText">正在加载随机图片...</span>
+      <div class="scroll-images" id="stripImagesTop"></div>
     </div>
-    <div class="image-count" id="imageCount">收录的图片数: 0</div>
+    <div class="image-count" id="imageCountTop">0</div>
 
     <div id="randomResult" class="grid"></div>
 
-
     <div class="scroll-strip">
-      <span id="stripTextBottom">正在加载随机图片...</span>
+      <div class="scroll-images" id="stripImagesBottom"></div>
     </div>
 
     <div class="pagination">
@@ -123,42 +119,40 @@
 
   <script>
     async function searchImage() {
-        const keyword = document.getElementById("searchBox").value.trim();
-        if (!keyword) return;
-
-        const response = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
-        const results = await response.json();
-
-        const searchDiv = document.getElementById("searchResult");
-        searchDiv.innerHTML = results.length
-            ? results.map(img => `
-              <div class="card">
-                <p>${img.name}</p>
-                <img src="${img.url}" alt="${img.name}">
-              </div>
-            `).join("")
-            : "<p>未找到匹配的图片</p>";
+      const keyword = document.getElementById("searchBox").value.trim();
+      if (!keyword) return;
+      const response = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
+      const results = await response.json();
+      const searchDiv = document.getElementById("searchResult");
+      searchDiv.innerHTML = results.length
+        ? results.map(img => `
+          <div class="card">
+            <p>${img.name}</p>
+            <img src="${img.url}" alt="${img.name}">
+          </div>
+        `).join("")
+        : "<p>未找到匹配的图片</p>";
     }
 
     async function loadRandom() {
-        const response = await fetch('/api/random?count=6');
-        const shuffled = await response.json();
+      const response = await fetch('/api/random?count=6');
+      const shuffled = await response.json();
 
-        const randomDiv = document.getElementById("randomResult");
-        randomDiv.innerHTML = shuffled.map(img => `
-            <div class="card">
-                <p>${img.name}</p>
-                <img src="${img.url}" alt="${img.name}">
-            </div>
-        `).join("");
+      const randomDiv = document.getElementById("randomResult");
+      randomDiv.innerHTML = shuffled.map(img => `
+        <div class="card">
+          <p>${img.name}</p>
+          <img src="${img.url}" alt="${img.name}">
+        </div>
+      `).join("");
 
-        const stripText = document.getElementById("stripText");
-        const stripTextBottom = document.getElementById("stripTextBottom");
-        stripText.textContent = "欢迎来到奇言录";
-        stripTextBottom.textContent = "我们收集各类奇言怪语";
+      const topStrip = document.getElementById("stripImagesTop");
+      const bottomStrip = document.getElementById("stripImagesBottom");
+      topStrip.innerHTML = bottomStrip.innerHTML = shuffled.map(img => `
+        <img src="${img.url}" alt="${img.name}">
+      `).join("");
 
-        const countEl = document.getElementById("imageCount");
-        countEl.textContent = ` ${shuffled.length}条奇言已被收录`;
+      document.getElementById("imageCountTop").textContent = `${shuffled.length}条奇言已被收录`;
     }
 
     loadRandom();
