@@ -4,15 +4,18 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve static files from the root directory
 app.use(express.static('.'));
 
 // GitHub Repo API
 const repoApi = "https://api.github.com/repos/hotpad100c/Qoute/contents/";
 let imageCache = [];
+let dailyStatsCache = null;
+let dailyStatsLastFetch = 0;
 const cacheDuration = 10 * 60 * 1000; 
+const dailyStatsCacheDuration = 10 * 60 * 1000;
 const githubToken = process.env.GITHUB_TOKEN;
 const cacheFile = './cache.json';
+const dailyStatsFile = './dailyStats.json';
 
 // Levenshtein
 function levenshtein(a, b) {
@@ -37,38 +40,29 @@ function similarity(a, b) {
 // Fetch GitHub images
 async function fetchAllImages() {
   console.log("Fetching images from GitHub API...");
-  console.log("GitHub Token prefix:", githubToken?.slice(0, 5));
-  let page = 1;
-  let allImages = [];
-  const headers = {
-    'User-Agent': 'MyQuoteApp/1.0',   
-  };
+  const headers = { 'User-Agent': 'MyQuoteApp/1.0' };
+  if (githubToken) headers['Authorization'] = `token ${githubToken}`;
 
-  if (githubToken) {
-    headers['Authorization'] = `token ${githubToken}`;
-  }
-  
-    try {
-      const response = await axios.get(
-        "https://api.github.com/repos/hotpad100c/Qoute/git/trees/main?recursive=1",
-        { headers }
-      );
+  try {
+    const response = await axios.get(
+      "https://api.github.com/repos/hotpad100c/Qoute/git/trees/main?recursive=1",
+      { headers }
+    );
 
-      const files = response.data.tree
+    const files = response.data.tree
       .filter(item => item.type === "blob" && /\.(png|jpg|jpeg|gif)$/i.test(item.path))
       .map(item => ({
         name: item.path.split('/').pop(),
-        url: `https://raw.githubusercontent.com/hotpad100c/Qoute/main/${item.path}`
+        url: `https://raw.githubusercontent.com/hotpad100c/Qoute/main/${item.path}`,
+        path: item.path // save
       }));
 
-      console.log(`Fetched ${files.length} images.`);
-      return files;
-    }  catch (err) {
-      console.error("Error fetching from GitHub API:", err.response?.status, err.response?.data);
-    }
-
-  console.log(`Fetched ${allImages.length} images.`);
-  return allImages;
+    console.log(`Fetched ${files.length} images.`);
+    return files;
+  } catch (err) {
+    console.error("Error fetching from GitHub API:", err.response?.status, err.response?.data || err.message);
+    return [];
+  }
 }
 
 // Refresh cache with retry + persistence
@@ -78,7 +72,7 @@ async function refreshCache(retries = 3) {
     images = await fetchAllImages();
     if (images.length > 0) break;
     console.log(`Retrying fetch... (${i + 1}/${retries})`);
-    await new Promise(r => setTimeout(r, 5000)); // wait 5s before retry
+    await new Promise(r => setTimeout(r, 5000));
   }
 
   if (images.length > 0) {
@@ -105,8 +99,25 @@ function loadCacheFromFile() {
   }
 }
 
+// Load daily stats from file
+function loadDailyStatsFromFile() {
+  if (fs.existsSync(dailyStatsFile)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(dailyStatsFile, 'utf8'));
+      if (data && typeof data === 'object') {
+        dailyStatsCache = data;
+        dailyStatsLastFetch = Date.now();
+        console.log("Loaded daily stats from file");
+      }
+    } catch (err) {
+      console.error("Error reading dailyStats file:", err.message);
+    }
+  }
+}
+
 // Init cache
 loadCacheFromFile();
+loadDailyStatsFromFile();
 refreshCache();
 setInterval(refreshCache, cacheDuration);
 
@@ -137,19 +148,55 @@ app.get('/api/search', (req, res) => {
   results.sort((a, b) => b.score - a.score);
   res.json(results.slice(0, 3));
 });
-// API:total count
+
+// API: total count
 app.get('/api/count', (req, res) => {
-  if (imageCache.length === 0) {
-    return res.status(503).json({ error: 'Cache not ready' });
-  }
+  if (imageCache.length === 0) return res.status(503).json({ error: 'Cache not ready' });
   res.json({ total: imageCache.length });
 });
+
 // API: random image
 app.get('/api/random', (req, res) => {
   if (imageCache.length === 0) return res.status(503).json({ error: 'Cache not ready' });
   const count = parseInt(req.query.count, 10) || 6;
   const shuffled = [...imageCache].sort(() => 0.5 - Math.random());
   res.json(shuffled.slice(0, count));
+});
+
+// API: daily stats
+app.get('/api/daily-stats', async (req, res) => {
+  const now = Date.now();
+  if (dailyStatsCache && now - dailyStatsLastFetch < dailyStatsCacheDuration) {
+    return res.json(dailyStatsCache);
+  }
+
+  if (imageCache.length === 0) return res.status(503).json({ error: 'Cache not ready' });
+
+  try {
+    const headers = { 'User-Agent': 'MyQuoteApp/1.0' };
+    if (githubToken) headers['Authorization'] = `token ${githubToken}`;
+
+    const stats = {};
+
+    for (let img of imageCache) {
+      const commitsRes = await axios.get(`https://api.github.com/repos/hotpad100c/Qoute/commits`, {
+        params: { path: img.path },
+        headers
+      });
+      const firstCommit = commitsRes.data[commitsRes.data.length - 1];
+      const dateStr = firstCommit.commit.author.date.split('T')[0];
+      stats[dateStr] = (stats[dateStr] || 0) + 1;
+    }
+
+    dailyStatsCache = stats;
+    dailyStatsLastFetch = now;
+    fs.writeFileSync(dailyStatsFile, JSON.stringify(stats, null, 2));
+    res.json(stats);
+
+  } catch (err) {
+    console.error("Error fetching daily stats:", err.response?.status, err.response?.data || err.message);
+    res.status(500).json({ error: 'Failed to fetch daily stats' });
+  }
 });
 
 // Run server
