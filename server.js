@@ -48,22 +48,26 @@ async function fetchAllImages() {
     headers['Authorization'] = `token ${githubToken}`;
   }
   
-  while (true) {
     try {
-      const response = await axios.get(`${repoApi}?page=${page}&per_page=100`, { headers });
-      if (!response.data || response.data.length === 0) break;
+      const response = await axios.get(
+        "https://api.github.com/repos/hotpad100c/Qoute/git/trees/main?recursive=1",
+        { headers }
+      );
 
-      const files = response.data
-        .filter(item => item.type === "file" && /\.(png|jpg|jpeg|gif)$/i.test(item.name))
-        .map(item => ({ name: item.name, url: item.download_url }));
+      const files = response.data.tree
+      .filter(item => item.type === "blob" && /\.(png|jpg|jpeg|gif)$/i.test(item.path))
+      .map(item => ({
+        name: item.path.split('/').pop(),
+        url: `https://raw.githubusercontent.com/hotpad100c/Qoute/main/${item.path}`
+      }));
 
-      allImages = allImages.concat(files);
-      page++;
-    } catch (err) {
+      console.log(`Fetched ${files.length} images.`);
+      return files;
+    }  catch (err) {
       console.error("Error fetching from GitHub API:", err.response?.status, err.response?.data);
       break;
     }
-  }
+  
 
   console.log(`Fetched ${allImages.length} images.`);
   return allImages;
