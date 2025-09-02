@@ -155,7 +155,7 @@
       document.getElementById("stripImagesBottom").innerHTML = makeLoop(images);
       const countRes = await fetch('/api/count');
        const { total } = await countRes.json()
-      document.getElementById("imageCountTop").textContent = ` ${total}条言已被收录`;
+      document.getElementById("imageCountTop").textContent = ` ${total}条奇言已被收录`;
     }
 
     loadStrips();
