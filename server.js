@@ -40,7 +40,7 @@ async function fetchAllImages() {
   console.log("GitHub Token prefix:", githubToken?.slice(0, 5));
   let page = 1;
   let allImages = [];
-  const headers = githubToken ? { Authorization: `Bearer ${githubToken}` } : {};
+  const headers = githubToken ? { Authorization: `token ${githubToken}` } : {};
   
   while (true) {
     try {
