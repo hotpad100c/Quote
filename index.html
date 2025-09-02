@@ -63,20 +63,21 @@
       margin-top: 10px;
     }
     .scroll-strip {
-      position: relative;
       overflow: hidden;
       background: #f4f6f8;
       padding: 8px 0;
       margin: 20px 0;
       border-radius: 8px;
+      white-space: nowrap;
+      position: relative;
     }
     .scroll-images {
-      display: flex;
+      display: inline-flex;
       gap: 10px;
-      animation: scroll-left 15s linear infinite;
+      animation: scroll-left 20s linear infinite;
     }
     .scroll-images img {
-      height: 50px;
+      height: 60px;
       border-radius: 6px;
     }
     @keyframes scroll-left {
@@ -100,11 +101,11 @@
   <div id="searchResult" class="grid"></div>
 
   <div id="randomSection">
-    <h2 style="text-align:center;">随便来点</h2>
+    <h2 style="text-align:center;">随机推荐</h2>
     <div class="scroll-strip">
       <div class="scroll-images" id="stripImagesTop"></div>
     </div>
-    <div class="image-count" id="imageCountTop">0</div>
+    <div class="image-count" id="imageCountTop">收录的图片数: 0</div>
 
     <div id="randomResult" class="grid"></div>
 
@@ -137,7 +138,6 @@
     async function loadRandom() {
       const response = await fetch('/api/random?count=6');
       const shuffled = await response.json();
-
       const randomDiv = document.getElementById("randomResult");
       randomDiv.innerHTML = shuffled.map(img => `
         <div class="card">
@@ -145,16 +145,19 @@
           <img src="${img.url}" alt="${img.name}">
         </div>
       `).join("");
-
-      const topStrip = document.getElementById("stripImagesTop");
-      const bottomStrip = document.getElementById("stripImagesBottom");
-      topStrip.innerHTML = bottomStrip.innerHTML = shuffled.map(img => `
-        <img src="${img.url}" alt="${img.name}">
-      `).join("");
-
-      document.getElementById("imageCountTop").textContent = `${shuffled.length}条奇言已被收录`;
     }
 
+    async function loadStrips() {
+      const response = await fetch('/api/random?count=10');
+      const images = await response.json();
+      const makeLoop = imgs => imgs.map(img => `<img src="${img.url}" alt="${img.name}">`).join("") + imgs.map(img => `<img src="${img.url}" alt="${img.name}">`).join("");
+      document.getElementById("stripImagesTop").innerHTML = makeLoop(images);
+      document.getElementById("stripImagesBottom").innerHTML = makeLoop(images);
+      document.getElementById("imageCountTop").textContent = ` ${images.length}条奇
+      言已被收录`;
+    }
+
+    loadStrips();
     loadRandom();
   </script>
 </body>
