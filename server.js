@@ -35,10 +35,11 @@ function similarity(a, b) {
 // fetch images
 async function fetchAllImages() {
   console.log("Fetching images from GitHub API...");
+  console.log("GitHub Token prefix:", process.env.GITHUB_TOKEN?.slice(0,5));
   let page = 1;
   let allImages = [];
-  const headers = githubToken ? { Authorization: `token ${githubToken}` } : {};
-
+  const headers = githubToken ? { Authorization: `Bearer ${githubToken}` } : {};
+  
   while (true) {
     try {
       const response = await axios.get(`${repoApi}?page=${page}&per_page=100`, { headers });
