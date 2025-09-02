@@ -10,7 +10,7 @@ app.use(express.static('.'));
 // GitHub Repo API
 const repoApi = "https://api.github.com/repos/hotpad100c/Qoute/contents/";
 let imageCache = [];
-const cacheDuration = 60 * 60 * 1000; // refresh every 5 minutes
+const cacheDuration = 10 * 60 * 1000; 
 const githubToken = process.env.GITHUB_TOKEN;
 const cacheFile = './cache.json';
 
