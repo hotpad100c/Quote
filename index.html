@@ -62,6 +62,35 @@
       text-align: center;
       margin-top: 10px;
     }
+
+    /* ===== 带子效果 ===== */
+    .scroll-strip {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #4cafef, #2196f3);
+      color: white;
+      padding: 8px 0;
+      margin: 20px 0 5px 0;
+      border-radius: 8px;
+    }
+    .scroll-strip span {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: scroll-left 15s linear infinite;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    @keyframes scroll-left {
+      from { transform: translateX(0%); }
+      to   { transform: translateX(-100%); }
+    }
+    .image-count {
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -73,8 +102,20 @@
   <div id="searchResult" class="grid"></div>
 
   <div id="randomSection">
-    <h2 style="text-align:center;">随机推荐</h2>
+    <h2 style="text-align:center;">随便看看？</h2>
+
+    <div class="scroll-strip">
+      <span id="stripText">正在加载随机图片...</span>
+    </div>
+    <div class="image-count" id="imageCount">收录的图片数: 0</div>
+
     <div id="randomResult" class="grid"></div>
+
+
+    <div class="scroll-strip">
+      <span id="stripTextBottom">正在加载随机图片...</span>
+    </div>
+
     <div class="pagination">
       <button onclick="loadRandom()">换一换</button>
     </div>
@@ -102,6 +143,7 @@
     async function loadRandom() {
         const response = await fetch('/api/random?count=6');
         const shuffled = await response.json();
+
         const randomDiv = document.getElementById("randomResult");
         randomDiv.innerHTML = shuffled.map(img => `
             <div class="card">
@@ -109,9 +151,16 @@
                 <img src="${img.url}" alt="${img.name}">
             </div>
         `).join("");
+
+        const stripText = document.getElementById("stripText");
+        const stripTextBottom = document.getElementById("stripTextBottom");
+        stripText.textContent = "欢迎来到奇言录";
+        stripTextBottom.textContent = "我们收集各类奇言怪语";
+
+        const countEl = document.getElementById("imageCount");
+        countEl.textContent = ` ${shuffled.length}条奇言已被收录`;
     }
 
-    // Initial load
     loadRandom();
   </script>
 </body>
