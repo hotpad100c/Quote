@@ -40,7 +40,13 @@ async function fetchAllImages() {
   console.log("GitHub Token prefix:", githubToken?.slice(0, 5));
   let page = 1;
   let allImages = [];
-  const headers = githubToken ? { Authorization: `token ${githubToken}` } : {};
+  const headers = {
+    'User-Agent': 'MyQuoteApp/1.0',   
+  };
+
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`;
+  }
   
   while (true) {
     try {
