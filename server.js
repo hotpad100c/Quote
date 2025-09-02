@@ -45,7 +45,7 @@ async function fetchAllImages() {
   };
 
   if (githubToken) {
-    headers['Authorization'] = `Bearer ${githubToken}`;
+    headers['Authorization'] = `token ${githubToken}`;
   }
   
   while (true) {
