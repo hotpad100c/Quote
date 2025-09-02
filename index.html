@@ -76,117 +76,43 @@
     <h2 style="text-align:center;">随机推荐</h2>
     <div id="randomResult" class="grid"></div>
     <div class="pagination">
-      <button onclick="prevPage()">上一页</button>
-      <button onclick="nextPage()">下一页</button>
+      <button onclick="loadRandom()">换一换</button>
     </div>
   </div>
 
   <script>
-    const repoApi = "https://api.github.com/repos/hotpad100c/Qoute/contents/";
-    let currentPage = 1;
-    let perPage = 30;
-
-    async function fetchImagePage(page) {
-      const response = await fetch(repoApi + `?page=${page}&per_page=${perPage}`);
-      const data = await response.json();
-      return data
-        .filter(item => item.type === "file" && /\.(png|jpg|jpeg|gif)$/i.test(item.name))
-        .map(item => ({
-          name: item.name,
-          url: item.download_url
-        }));
-    }
-
-    function levenshtein(a, b) {
-      const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-      for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-      for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-      for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-          if (a[i - 1].toLowerCase() === b[j - 1].toLowerCase()) {
-            dp[i][j] = dp[i - 1][j - 1];
-          } else {
-            dp[i][j] = Math.min(
-              dp[i - 1][j] + 1,
-              dp[i][j - 1] + 1,
-              dp[i - 1][j - 1] + 1
-            );
-          }
-        }
-      }
-      return dp[a.length][b.length];
-    }
-
-    function similarity(a, b) {
-      const dist = levenshtein(a, b);
-      return 1 - dist / Math.max(a.length, b.length);
-    }
-
     async function searchImage() {
-  const keyword = document.getElementById("searchBox").value.trim();
-  if (!keyword) return;
+        const keyword = document.getElementById("searchBox").value.trim();
+        if (!keyword) return;
 
-  let containsResults = [];
-  let fuzzyResults = [];
-  let page = 1;
+        const response = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
+        const results = await response.json();
 
-  while (containsResults.length < 3 && fuzzyResults.length < 3) {
-    const imgs = await fetchImagePage(page);
-    if (imgs.length === 0) break;
-
-    imgs.forEach(img => {
-      if (img.name.includes(keyword)) {
-        containsResults.push({ ...img, score: 1 });
-      } else {
-        const score = similarity(keyword, img.name);
-        if (score > 0) fuzzyResults.push({ ...img, score });
-      }
-    });
-
-    page++;
-    if (page > 10) break;
-  }
-
-  let results = containsResults.length > 0 ? containsResults : fuzzyResults;
-  results.sort((a, b) => b.score - a.score);
-  const top3 = results.slice(0, 3);
-
-  const searchDiv = document.getElementById("searchResult");
-  searchDiv.innerHTML = top3.length
-    ? top3.map(img => `
-      <div class="card">
-        <p>${img.name}</p>
-        <img src="${img.url}" alt="${img.name}">
-      </div>
-    `).join("")
-    : "<p>未找到匹配的图片</p>";
-}
-
-    async function loadRandom(page) {
-      const imgs = await fetchImagePage(page);
-      const shuffled = imgs.sort(() => 0.5 - Math.random()).slice(0, 6);
-      const randomDiv = document.getElementById("randomResult");
-      randomDiv.innerHTML = shuffled.map(img => `
-        <div class="card">
-          <p>${img.name}</p>
-          <img src="${img.url}" alt="${img.name}">
-        </div>
-      `).join("");
+        const searchDiv = document.getElementById("searchResult");
+        searchDiv.innerHTML = results.length
+            ? results.map(img => `
+              <div class="card">
+                <p>${img.name}</p>
+                <img src="${img.url}" alt="${img.name}">
+              </div>
+            `).join("")
+            : "<p>未找到匹配的图片</p>";
     }
 
-    function nextPage() {
-      currentPage++;
-      loadRandom(currentPage);
+    async function loadRandom() {
+        const response = await fetch('/api/random?count=6');
+        const shuffled = await response.json();
+        const randomDiv = document.getElementById("randomResult");
+        randomDiv.innerHTML = shuffled.map(img => `
+            <div class="card">
+                <p>${img.name}</p>
+                <img src="${img.url}" alt="${img.name}">
+            </div>
+        `).join("");
     }
 
-    function prevPage() {
-      if (currentPage > 1) {
-        currentPage--;
-        loadRandom(currentPage);
-      }
-    }
-
-    loadRandom(currentPage);
+    // Initial load
+    loadRandom();
   </script>
 </body>
 </html>
