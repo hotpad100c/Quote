@@ -238,11 +238,13 @@
     }
 
     async function loadStrips() {
-      const response = await fetch('/api/random?count=10');
-      const images = await response.json();
+      const response1 = await fetch('/api/random?count=10');
+      const images1 = await response1.json();
+      const response2 = await fetch('/api/random?count=10');
+      const images2 = await response2.json();
       const makeLoop = imgs => imgs.map(img => `<img src="${img.url}" alt="${img.name}">`).join("") + imgs.map(img => `<img src="${img.url}" alt="${img.name}">`).join("");
-      document.getElementById("stripImagesTop").innerHTML = makeLoop(images);
-      document.getElementById("stripImagesBottom").innerHTML = makeLoop(images);
+      document.getElementById("stripImagesTop").innerHTML = makeLoop(images1);
+      document.getElementById("stripImagesBottom").innerHTML = makeLoop(images2);
       const countRes = await fetch('/api/count');
       const { total } = await countRes.json();
       document.getElementById("imageCountTop").textContent = `${total} 条奇言已被收录`;
