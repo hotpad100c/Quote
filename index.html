@@ -26,8 +26,8 @@
       border: 1px solid #ccc;
     }
     button {
-      padding: 8px 12px;
-      font-size: 16px;
+      padding: 6px 10px;
+      font-size: 14px;
       margin-left: 5px;
       border: none;
       border-radius: 6px;
@@ -50,6 +50,11 @@
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.03);
     }
     .card img {
       max-width: 100%;
@@ -91,52 +96,78 @@
       margin-bottom: 10px;
     }
     #calendar {
-    width: 320px;
-    margin: 20px auto;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    padding: 10px;
-    font-family: sans-serif;
-  }
-  .cal-header {
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-  }
-  .cal-day {
-    text-align: center;
-    padding: 6px 0;
-    border-radius: 6px;
-    background: #f9f9f9;
-    font-size: 14px;
-    position: relative;
-  }
-  .cal-day.today {
-    background: #e3f2fd;
-    font-weight: bold;
-  }
-  .cal-day .count {
-    font-size: 10px;
-    color: #fff;
-    background: #4cafef;
-    border-radius: 10px;
-    padding: 1px 4px;
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-  }
-  .cal-weekday {
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    color: #666;
-  }
+      width: 320px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 10px;
+      font-family: sans-serif;
+    }
+    .cal-header {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .cal-header button {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 10px;
+      color: #4cafef;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day {
+      text-align: center;
+      padding: 6px 0;
+      border-radius: 6px;
+      background: #f9f9f9;
+      font-size: 14px;
+      position: relative;
+    }
+    .cal-day.today {
+      background: #e3f2fd;
+      font-weight: bold;
+    }
+    .cal-day .count {
+      font-size: 10px;
+      color: #fff;
+      background: #4cafef;
+      border-radius: 10px;
+      padding: 1px 4px;
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+    }
+    .cal-weekday {
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      color: #666;
+    }
+    /* 图片放大模态框 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 12px;
+    }
   </style>
 </head>
 <body>
@@ -167,6 +198,11 @@
     </div>
   </div>
 
+  <!-- 模态框 -->
+  <div class="modal" id="imgModal">
+    <img id="modalImg" src="">
+  </div>
+
   <script>
     async function searchImage() {
       const keyword = document.getElementById("searchBox").value.trim();
@@ -176,7 +212,7 @@
       const searchDiv = document.getElementById("searchResult");
       searchDiv.innerHTML = results.length
         ? results.map(img => `
-          <div class="card">
+          <div class="card" onclick="openModal('${img.url}')">
             <p>${img.name}</p>
             <img src="${img.url}" alt="${img.name}">
           </div>
@@ -185,11 +221,16 @@
     }
 
     async function loadRandom() {
-      const response = await fetch('/api/random?count=6');
+      const width = window.innerWidth;
+      let count = 6;
+      if (width > 1400) count = 10;
+      else if (width > 1000) count = 8;
+      else if (width > 700) count = 7;
+      const response = await fetch(`/api/random?count=${count}`);
       const shuffled = await response.json();
       const randomDiv = document.getElementById("randomResult");
       randomDiv.innerHTML = shuffled.map(img => `
-        <div class="card">
+        <div class="card" onclick="openModal('${img.url}')">
           <p>${img.name}</p>
           <img src="${img.url}" alt="${img.name}">
         </div>
@@ -203,49 +244,89 @@
       document.getElementById("stripImagesTop").innerHTML = makeLoop(images);
       document.getElementById("stripImagesBottom").innerHTML = makeLoop(images);
       const countRes = await fetch('/api/count');
-       const { total } = await countRes.json()
-      document.getElementById("imageCountTop").textContent = ` ${total}条奇言已被收录`;
+      const { total } = await countRes.json();
+      document.getElementById("imageCountTop").textContent = `${total} 条奇言已被收录`;
     }
+
     async function loadCalendar() {
-  const res = await fetch('/api/daily-stats');
-  const stats = await res.json(); // { "2025-09-01": 12, "2025-09-02": 8, ... }
+      const res = await fetch('/api/daily-stats');
+      const stats = await res.json(); // { "2025-08-31": 5, "2025-09-01": 12, ... }
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth(); // 0-11
+      let now = new Date();
+      let currentYear = now.getFullYear();
+      let currentMonth = now.getMonth();
 
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startWeekday = firstDay.getDay();
-  const daysInMonth = lastDay.getDate();
+      function renderCalendar(year, month) {
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startWeekday = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
 
-  const weekdays = ["日","一","二","三","四","五","六"];
+        const weekdays = ["日","一","二","三","四","五","六"];
 
-  const cal = document.getElementById('calendar');
-  cal.innerHTML = `
-    <div class="cal-header">${year}年${month+1}月</div>
-    <div class="cal-grid">${weekdays.map(d => `<div class="cal-weekday">${d}</div>`).join("")}</div>
-    <div class="cal-grid" id="cal-days"></div>
-  `;
+        const cal = document.getElementById('calendar');
+        cal.innerHTML = `
+          <div class="cal-header">
+            <button id="prevMonth">←</button>
+            ${year}年${month+1}月
+            <button id="nextMonth">→</button>
+          </div>
+          <div class="cal-grid">${weekdays.map(d => `<div class="cal-weekday">${d}</div>`).join("")}</div>
+          <div class="cal-grid" id="cal-days"></div>
+        `;
 
-  const daysDiv = document.getElementById('cal-days');
-  for (let i=0; i<startWeekday; i++) {
-    daysDiv.innerHTML += `<div></div>`;
-  }
+        const daysDiv = document.getElementById('cal-days');
+        for (let i=0; i<startWeekday; i++) {
+          daysDiv.innerHTML += `<div></div>`;
+        }
 
-  for (let d=1; d<=daysInMonth; d++) {
-    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const isToday = (d === now.getDate());
-    const count = stats[dateStr] || 0;
+        for (let d=1; d<=daysInMonth; d++) {
+          const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+          const isToday = (year === now.getFullYear() && month === now.getMonth() && d === now.getDate());
+          const count = stats[dateStr] || 0;
 
-    daysDiv.innerHTML += `
-      <div class="cal-day ${isToday ? "today":""}">
-        ${d}
-        ${count > 0 ? `<span class="count">+${count}</span>` : ""}
-      </div>
-      `;
+          daysDiv.innerHTML += `
+            <div class="cal-day ${isToday ? "today":""}">
+              ${d}
+              ${count > 0 ? `<span class="count">+${count}</span>` : ""}
+            </div>
+          `;
+        }
+
+        document.getElementById("prevMonth").onclick = () => {
+          if (month === 0) {
+            currentYear--;
+            currentMonth = 11;
+          } else {
+            currentMonth--;
+          }
+          renderCalendar(currentYear, currentMonth);
+        };
+
+        document.getElementById("nextMonth").onclick = () => {
+          if (month === 11) {
+            currentYear++;
+            currentMonth = 0;
+          } else {
+            currentMonth++;
+          }
+          renderCalendar(currentYear, currentMonth);
+        };
       }
+
+      renderCalendar(currentYear, currentMonth);
     }
+
+    function openModal(url) {
+      const modal = document.getElementById("imgModal");
+      const modalImg = document.getElementById("modalImg");
+      modal.style.display = "flex";
+      modalImg.src = url;
+    }
+
+    document.getElementById("imgModal").onclick = () => {
+      document.getElementById("imgModal").style.display = "none";
+    };
 
     loadCalendar();
     loadStrips();
