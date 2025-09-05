@@ -36,6 +36,26 @@ function similarity(a, b) {
   const dist = levenshtein(a, b);
   return 1 - dist / Math.max(a.length, b.length);
 }
+// API: browse with pagination
+app.get('/api/browse', (req, res) => {
+  if (imageCache.length === 0) return res.status(503).json({ error: 'Cache not ready' });
+
+  const count = parseInt(req.query.count, 10) || 20; 
+  const page = parseInt(req.query.page, 10) || 1;
+
+  const start = (page - 1) * count;
+  const end = start + count;
+
+  const results = imageCache.slice(start, end);
+
+  res.json({
+    page,
+    count,
+    total: imageCache.length,
+    totalPages: Math.ceil(imageCache.length / count),
+    images: results
+  });
+});
 
 // Fetch GitHub images
 async function fetchAllImages() {
