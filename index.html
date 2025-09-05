@@ -235,7 +235,17 @@
       <div class="scroll-images" id="stripImagesBottom"></div>
     </div>
   </div>
-
+  <div id="browseSection" style="margin-top:40px; text-align:center;">
+    <button id="toggleBrowse" onclick="toggleBrowse()">▼ 展开浏览区 ▼</button>
+    <div id="browseContent" style="display:none; margin-top:20px;">
+      <div id="browseGrid" class="grid"></div>
+      <div class="pagination">
+        <button onclick="prevBrowsePage()">上一页</button>
+        <span id="browsePageInfo">第 1 页</span>
+        <button onclick="nextBrowsePage()">下一页</button>
+      </div>
+    </div>
+  </div>
   <!-- 模态框 -->
   <div class="modal" id="imgModal">
     <img id="modalImg" src="">
@@ -367,7 +377,48 @@
     document.getElementById("imgModal").onclick = () => {
       document.getElementById("imgModal").style.display = "none";
     };
+    let browsePage = 1;
 
+async function loadBrowse(page = 1) {
+  const response = await fetch(`/api/browse?count=20&page=${page}`);
+  const results = await response.json();
+  const grid = document.getElementById("browseGrid");
+
+  grid.innerHTML = results.length
+    ? results.map(img => `
+        <div class="card" onclick="openModal('${img.url}')">
+          <p>${img.name}</p>
+          <img src="${img.url}" alt="${img.name}">
+        </div>
+      `).join("")
+    : "<p>没有更多图片</p>";
+
+  browsePage = page;
+  document.getElementById("browsePageInfo").textContent = `第 ${browsePage} 页`;
+}
+
+function toggleBrowse() {
+  const content = document.getElementById("browseContent");
+  const btn = document.getElementById("toggleBrowse");
+  if (content.style.display === "none") {
+    content.style.display = "block";
+    btn.textContent = "▲ 收起浏览区 ▲";
+    loadBrowse(1); // 初次展开时加载第一页
+  } else {
+    content.style.display = "none";
+    btn.textContent = "▼ 展开浏览区 ▼";
+  }
+}
+
+function nextBrowsePage() {
+  loadBrowse(browsePage + 1);
+}
+
+function prevBrowsePage() {
+  if (browsePage > 1) {
+    loadBrowse(browsePage - 1);
+  }
+}
     loadCalendar();
     loadStrips();
     loadRandom();
