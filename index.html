@@ -8,11 +8,50 @@
       font-family: sans-serif;
       margin: 20px;
       background: #f4f6f8;
+      justify-content: center;
+      align-items: center;
       color: #333;
     }
     h1 {
-      text-align: center;
-      margin-bottom: 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      background: linear-gradient(270deg, #00ff99, #00ccff, #3399ff, #00ffcc);
+      background-size: 800% 800%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 6s ease infinite, breathe 3s ease-in-out infinite, glow 4s ease-in-out infinite;
+      text-shadow: 
+        0 0 10px rgba(0, 255, 200, 0.6),
+        0 0 20px rgba(0, 200, 255, 0.4),
+        0 0 30px rgba(50, 150, 255, 0.3);
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    @keyframes glow {
+      0%, 100% {
+        text-shadow: 
+          0 0 8px rgba(0, 255, 200, 0.5),
+          0 0 16px rgba(0, 200, 255, 0.3),
+          0 0 24px rgba(50, 150, 255, 0.2);
+      }
+      50% {
+        text-shadow: 
+          0 0 15px rgba(0, 255, 200, 0.8),
+          0 0 30px rgba(0, 200, 255, 0.6),
+          0 0 45px rgba(50, 150, 255, 0.4);
+      }
     }
     .search-box {
       text-align: center;
