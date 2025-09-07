@@ -210,6 +210,14 @@
 </head>
 <body>
   <h1>- QUOTE -</h1>
+   <p style="text-align:center; margin-top:20px; font-family:sans-serif; font-size:1.1rem;">
+  💡   贡献请参考
+      <a href="https://github.com/hotpad100c/Quote"
+         target="_blank"
+         style="color:#3399ff; text-decoration:none; font-weight:bold;">
+        贡献准则
+      </a>
+    </p>
   <div class="search-box">
     <input type="text" id="searchBox" placeholder="输入关键字">
     <button onclick="searchImage()">搜索</button>
@@ -381,7 +389,8 @@
 
 async function loadBrowse(page = 1) {
   const response = await fetch(`/api/browse?count=20&page=${page}`);
-  const results = await response.json();
+  const data = await response.json();
+  const results = data.images || [];
   const grid = document.getElementById("browseGrid");
 
   grid.innerHTML = results.length
