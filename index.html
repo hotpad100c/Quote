@@ -305,7 +305,6 @@
       const { total } = await countRes.json();
       document.getElementById("imageCountTop").textContent = `${total} 条奇言已被收录`;
     }
-
   async function loadCalendar() {
   const res = await fetch('/api/daily-stats');
   const stats = await res.json(); // { "2025-08-31": 5, "2025-09-01": 12, ... }
@@ -322,7 +321,70 @@
   let now = new Date();
   let currentYear = now.getFullYear();
   let currentMonth = now.getMonth();
+    async function loadCalendar() {
+      const res = await fetch('/api/daily-stats');
+      const stats = await res.json(); // { "2025-08-31": 5, "2025-09-01": 12, ... }
 
+      let now = new Date();
+      let currentYear = now.getFullYear();
+      let currentMonth = now.getMonth();
+
+      function renderCalendar(year, month) {
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startWeekday = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
+
+        const weekdays = ["日","一","二","三","四","五","六"];
+
+        const cal = document.getElementById('calendar');
+        cal.innerHTML = `
+          <div class="cal-header">
+            <button id="prevMonth">←</button>
+            ${year}年${month+1}月
+            <button id="nextMonth">→</button>
+          </div>
+          <div class="cal-grid">${weekdays.map(d => `<div class="cal-weekday">${d}</div>`).join("")}</div>
+          <div class="cal-grid" id="cal-days"></div>
+        `;
+
+        const daysDiv = document.getElementById('cal-days');
+        for (let i=0; i<startWeekday; i++) {
+          daysDiv.innerHTML += `<div></div>`;
+        }
+
+        for (let d=1; d<=daysInMonth; d++) {
+          const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+          const isToday = (year === now.getFullYear() && month === now.getMonth() && d === now.getDate());
+          const count = stats[dateStr] || 0;
+
+          daysDiv.innerHTML += `
+            <div class="cal-day ${isToday ? "today":""}">
+              ${d}
+              ${count > 0 ? `<span class="count">+${count}</span>` : ""}
+            </div>
+          `;
+        }
+
+        document.getElementById("prevMonth").onclick = () => {
+          if (month === 0) {
+            currentYear--;
+            currentMonth = 11;
+          } else {
+            currentMonth--;
+          }
+          renderCalendar(currentYear, currentMonth);
+        };
+
+        document.getElementById("nextMonth").onclick = () => {
+          if (month === 11) {
+            currentYear++;
+            currentMonth = 0;
+          } else {
+            currentMonth++;
+          }
+          renderCalendar(currentYear, currentMonth);
+        };
   function renderCalendar(year, month) {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
