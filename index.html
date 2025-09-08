@@ -306,22 +306,6 @@
       document.getElementById("imageCountTop").textContent = `${total} 条奇言已被收录`;
     }
   async function loadCalendar() {
-  const res = await fetch('/api/daily-stats');
-  const stats = await res.json(); // { "2025-08-31": 5, "2025-09-01": 12, ... }
-
-  const adjustedStats = {};
-  for (let key in stats) {
-
-    const utcDate = new Date(key + "T00:00:00Z"); 
-    // (YYYY-MM-DD)
-    const localKey = utcDate.toLocaleDateString("sv-SE"); // sv-SE
-    adjustedStats[localKey] = stats[key];
-  }
-
-  let now = new Date();
-  let currentYear = now.getFullYear();
-  let currentMonth = now.getMonth();
-    async function loadCalendar() {
       const res = await fetch('/api/daily-stats');
       const stats = await res.json(); // { "2025-08-31": 5, "2025-09-01": 12, ... }
 
@@ -385,6 +369,9 @@
           }
           renderCalendar(currentYear, currentMonth);
         };
+      }
+    }
+    
   function renderCalendar(year, month) {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
