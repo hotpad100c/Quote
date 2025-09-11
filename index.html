@@ -255,8 +255,16 @@
     </div>
   </div>
   <!-- 模态框 -->
-  <div class="modal" id="imgModal">
-    <img id="modalImg" src="">
+  <div id="imgModal" class="modal">
+    <div style="position:relative; background:#fff; padding:10px; border-radius:8px;">
+      <img id="modalImg" src="" style="max-width:80vw; max-height:70vh; display:block; margin:auto;"/>
+    
+      <div style="text-align:center; margin-top:10px;">
+        <button onclick="downloadImg()">📁</button>
+        <button onclick="shareImg()">➤</button>
+        <button onclick="closeModal()">⛔</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -375,12 +383,42 @@
       renderCalendar(currentYear, currentMonth);
     }
 
-    function openModal(url) {
-      const modal = document.getElementById("imgModal");
-      const modalImg = document.getElementById("modalImg");
-      modal.style.display = "flex";
-      modalImg.src = url;
-    }
+function openModal(url) {
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("modalImg");
+  modal.style.display = "flex";
+  modalImg.src = url;
+}
+
+function downloadImg() {
+  const img = document.getElementById("modalImg");
+  const a = document.createElement("a");
+  a.href = img.src;
+  a.download = "image.jpg"; 
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function shareImg() {
+  const img = document.getElementById("modalImg");
+  if (navigator.share) {
+    navigator.share({
+      title: "分享图片",
+      text: "",
+      url: img.src
+    }).catch(err => console.log("分享取消或失败", err));
+  } else {
+    // cant share
+    navigator.clipboard.writeText(img.src).then(() => {
+      alert("图片地址已复制");
+    });
+  }
+}
+
+function closeModal() {
+  document.getElementById("imgModal").style.display = "none";
+}
 
     document.getElementById("imgModal").onclick = () => {
       document.getElementById("imgModal").style.display = "none";
